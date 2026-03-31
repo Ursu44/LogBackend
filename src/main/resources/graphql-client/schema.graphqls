@@ -1,0 +1,80 @@
+
+type Alert {
+    eventId:        String!
+    timestamp:      Float
+    timestampIso:   String
+
+    rawLog:         String
+    templateId:     String
+    logCategory:    String
+    entityId:       String
+
+    ruleTriggered:  Boolean
+    ruleScore:      Float
+    ruleShortcut:   Boolean
+    rulesFired:     [String]
+
+    statScore:      Float
+    behaviorScore:  Float
+    catScore:       Float
+    rarity:         Float
+    burst:          Float
+
+    rfScore:        Float
+    lstmScore:      Float
+
+    entityContext:  EntityContext
+    scoreBreakdown: ScoreBreakdown
+
+    finalRisk:      Float!
+    riskLevel:      String!
+}
+
+type EntityContext {
+    failedAuth: Int
+    sudoCount:  Int
+    uploads:    Int
+    lsass:      Int
+}
+
+type ScoreBreakdown {
+    ruleEngine:      Float
+    isolationForest: Float
+    randomForest:    Float
+    lstm:            Float
+}
+
+type DashboardStats {
+    totalAlerts:  Int!
+    highCount:    Int!
+    mediumCount:  Int!
+    lowCount:     Int!
+}
+
+type Query {
+
+    recentAlerts: [Alert!]!
+
+    alerts(
+        riskLevel:     String
+        category:      String
+        entityId:      String
+        windowMinutes: Int
+        limit:         Int
+    ): [Alert!]!
+
+    alert(eventId: String!): Alert
+
+    dashboardStats(windowMinutes: Int): DashboardStats!
+    entityHistory(
+        entityId:      String!
+        windowMinutes: Int
+    ): [Alert!]!
+}
+
+
+
+type Subscription {
+    newAlert: Alert!
+    newHighAlert: Alert!
+}
