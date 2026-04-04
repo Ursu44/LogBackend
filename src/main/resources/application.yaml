@@ -22,5 +22,26 @@ spring:
   graphql:
     websocket:
       path: /graphql
+      connection-init-timeout: 60s
     graphiql:
       enabled: true
+    cors:
+      allowed-origins: "http://localhost:4200"
+      allowed-methods: GET,POST,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+
+  mvc:
+    async:
+      request-timeout: -1
+
+server:
+  tomcat:
+    connection-timeout: -1
+
+logging:
+  level:
+    root: INFO
+    com.example.logsbackend: DEBUG
+    org.springframework.graphql: DEBUG
+    org.springframework.web.socket: DEBUG

@@ -19,7 +19,7 @@ public class AlertService {
     private final AlertRepository alertRepository;
 
     private final Sinks.Many<Alert> alertSink =
-            Sinks.many().multicast().onBackpressureBuffer();
+            Sinks.many().multicast().onBackpressureBuffer(1000, false);
 
     public Alert save(Alert alert) {
         if (alertRepository.existsById(alert.getEventId())) {
