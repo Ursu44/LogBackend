@@ -57,30 +57,71 @@ public class AlertService {
     public List<Alert> getAlerts(String riskLevel, String category,
                                  String entityId, Integer windowMinutes,
                                  int limit) {
+
+        LocalDateTime maxTimestamp = alertRepository
+                .findTop1ByOrderByTimestampIsoDesc()
+                .map(Alert::getTimestampIso)
+                .orElse(LocalDateTime.now());
+
+        log.info("=== getAlerts ===");
+        log.info("riskLevel={}, category={}, entityId={}, windowMinutes={}, limit={}",
+                riskLevel, category, entityId, windowMinutes, limit);
+        log.info("maxTimestamp: {}", maxTimestamp);
+
+        LocalDateTime from = windowMinutes != null
+                ? maxTimestamp.minusMinutes(windowMinutes)
+                : null;
+
+        log.info("from: {}", from);
+
         List<Alert> results;
 
         if (entityId != null) {
+            log.info("→ ramura entityId");
             results = alertRepository
                     .findByEntityIdOrderByTimestampIsoAsc(entityId);
-        } else if (riskLevel != null && windowMinutes != null) {
-            LocalDateTime from = LocalDateTime.now()
-                    .minusMinutes(windowMinutes);
+
+        } else if (riskLevel != null && from != null) {
+            log.info("→ ramura riskLevel + from");
+            LocalDateTime finalFrom = from;
             results = alertRepository
-                    .findByRiskLevelAndTimeRange(riskLevel, from);
+                    .findByRiskLevelOrderByTimestampIsoDesc(riskLevel)
+                    .stream()
+                    .filter(a -> a.getTimestampIso() != null &&
+                            a.getTimestampIso().isAfter(finalFrom))
+                    .toList();
+
         } else if (riskLevel != null) {
+            log.info("→ ramura riskLevel fără from");
             results = alertRepository
                     .findByRiskLevelOrderByTimestampIsoDesc(riskLevel);
+
+        } else if (category != null && from != null) {
+            log.info("→ ramura category + from");
+            LocalDateTime finalFrom = from;
+            results = alertRepository
+                    .findByLogCategoryOrderByTimestampIsoDesc(category)
+                    .stream()
+                    .filter(a -> a.getTimestampIso() != null &&
+                            a.getTimestampIso().isAfter(finalFrom))
+                    .toList();
+
         } else if (category != null) {
+            log.info("→ ramura category fără from");
             results = alertRepository
                     .findByLogCategoryOrderByTimestampIsoDesc(category);
-        } else if (windowMinutes != null) {
-            LocalDateTime from = LocalDateTime.now()
-                    .minusMinutes(windowMinutes);
+
+        } else if (from != null) {
+            log.info("→ ramura from fără riskLevel");
             results = alertRepository.findAllFromTime(from);
+
         } else {
+            log.info("→ ramura default");
             results = alertRepository
                     .findTop100ByOrderByTimestampIsoDesc();
         }
+
+        log.info("rezultate înainte de limit: {}", results.size());
 
         return results.stream().limit(limit).toList();
     }
