@@ -49,6 +49,8 @@ type DashboardStats {
     highCount:    Int!
     mediumCount:  Int!
     lowCount:     Int!
+    oldestAlert:  String
+    newestAlert:  String
 }
 
 type Query {

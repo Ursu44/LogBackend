@@ -9,6 +9,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -23,21 +25,12 @@ public class AlertService {
 
     public Alert save(Alert alert) {
         if (alertRepository.existsById(alert.getEventId())) {
-            log.debug("Alertă duplicat ignorată: {}", alert.getEventId());
             return alert;
         }
 
         alertSink.tryEmitNext(alert);
 
-        if ("LOW".equals(alert.getRiskLevel())) {
-            log.debug("LOW alert — skip PostgreSQL: {}", alert.getEventId());
-            return alert;
-        }
-
         Alert saved = alertRepository.save(alert);
-        System.out.println("✅ Alert salvat: " + saved.getEventId() +
-                " [" + saved.getRiskLevel() + "] entity=" +
-                saved.getEntityId());
         return saved;
     }
 
@@ -61,44 +54,58 @@ public class AlertService {
         LocalDateTime maxTimestamp = alertRepository
                 .findTop1ByOrderByTimestampIsoDesc()
                 .map(Alert::getTimestampIso)
-                .orElse(LocalDateTime.now());
+                .orElse(LocalDateTime.now(ZoneOffset.UTC));
 
-        log.info("=== getAlerts ===");
-        log.info("riskLevel={}, category={}, entityId={}, windowMinutes={}, limit={}",
-                riskLevel, category, entityId, windowMinutes, limit);
-        log.info("maxTimestamp: {}", maxTimestamp);
 
         LocalDateTime from = windowMinutes != null
                 ? maxTimestamp.minusMinutes(windowMinutes)
                 : null;
 
-        log.info("from: {}", from);
 
         List<Alert> results;
+        LocalDateTime finalFrom = from;
 
         if (entityId != null) {
-            log.info("→ ramura entityId");
             results = alertRepository
-                    .findByEntityIdOrderByTimestampIsoAsc(entityId);
+                    .findByEntityIdOrderByTimestampIsoAsc(entityId)
+                    .stream()
+                    .filter(a -> {
+                        if (finalFrom != null &&
+                                a.getTimestampIso() != null &&
+                                !a.getTimestampIso().isAfter(finalFrom)) {
+                            return false;
+                        }
+                        if (category != null &&
+                                !category.equals(a.getLogCategory())) {
+                            return false;
+                        }
+                        if (riskLevel != null &&
+                                !riskLevel.equals(a.getRiskLevel())) {
+                            return false;
+                        }
+                        return true;
+                    })
+                    .toList();
 
         } else if (riskLevel != null && from != null) {
-            log.info("→ ramura riskLevel + from");
-            LocalDateTime finalFrom = from;
             results = alertRepository
                     .findByRiskLevelOrderByTimestampIsoDesc(riskLevel)
                     .stream()
                     .filter(a -> a.getTimestampIso() != null &&
                             a.getTimestampIso().isAfter(finalFrom))
+                    .filter(a -> category == null ||
+                            category.equals(a.getLogCategory()))
                     .toList();
 
         } else if (riskLevel != null) {
-            log.info("→ ramura riskLevel fără from");
             results = alertRepository
-                    .findByRiskLevelOrderByTimestampIsoDesc(riskLevel);
+                    .findByRiskLevelOrderByTimestampIsoDesc(riskLevel)
+                    .stream()
+                    .filter(a -> category == null ||
+                            category.equals(a.getLogCategory()))
+                    .toList();
 
         } else if (category != null && from != null) {
-            log.info("→ ramura category + from");
-            LocalDateTime finalFrom = from;
             results = alertRepository
                     .findByLogCategoryOrderByTimestampIsoDesc(category)
                     .stream()
@@ -107,33 +114,35 @@ public class AlertService {
                     .toList();
 
         } else if (category != null) {
-            log.info("→ ramura category fără from");
             results = alertRepository
                     .findByLogCategoryOrderByTimestampIsoDesc(category);
 
         } else if (from != null) {
-            log.info("→ ramura from fără riskLevel");
             results = alertRepository.findAllFromTime(from);
 
         } else {
-            log.info("→ ramura default");
             results = alertRepository
                     .findTop100ByOrderByTimestampIsoDesc();
         }
 
-        log.info("rezultate înainte de limit: {}", results.size());
 
         return results.stream().limit(limit).toList();
     }
 
     public Alert getAlertById(String eventId) {
+        log.info("Id-ul eveniment"+eventId);
+        log.info("Rezultat id "+alertRepository.findById(eventId).orElse(null));
         return alertRepository.findById(eventId).orElse(null);
     }
 
     public List<Alert> getEntityHistory(String entityId,
                                         int windowMinutes) {
-        LocalDateTime from = LocalDateTime.now()
-                .minusMinutes(windowMinutes);
+        LocalDateTime maxTimestamp = alertRepository
+                .findTop1ByOrderByTimestampIsoDesc()
+                .map(Alert::getTimestampIso)
+                .orElse(LocalDateTime.now(ZoneOffset.UTC));
+
+        LocalDateTime from = maxTimestamp.minusMinutes(windowMinutes);
 
         return alertRepository
                 .findByEntityIdOrderByTimestampIsoAsc(entityId)
@@ -144,8 +153,12 @@ public class AlertService {
     }
 
     public DashboardStats getDashboardStats(int windowMinutes) {
-        LocalDateTime from = LocalDateTime.now()
-                .minusMinutes(windowMinutes);
+        LocalDateTime maxTimestamp = alertRepository
+                .findTop1ByOrderByTimestampIsoDesc()
+                .map(Alert::getTimestampIso)
+                .orElse(LocalDateTime.now(ZoneOffset.UTC));
+
+        LocalDateTime from = maxTimestamp.minusMinutes(windowMinutes);
 
         List<Alert> recent = alertRepository.findAllFromTime(from);
 
@@ -156,11 +169,27 @@ public class AlertService {
         long lowCount    = recent.stream()
                 .filter(a -> "LOW".equals(a.getRiskLevel())).count();
 
+        String oldest = recent.stream()
+                .map(Alert::getTimestampIso)
+                .filter(t -> t != null)
+                .min(Comparator.naturalOrder())
+                .map(Object::toString)
+                .orElse(null);
+
+        String newest = recent.stream()
+                .map(Alert::getTimestampIso)
+                .filter(t -> t != null)
+                .max(Comparator.naturalOrder())
+                .map(Object::toString)
+                .orElse(null);
+
         return new DashboardStats(
                 recent.size(),
                 (int) highCount,
                 (int) mediumCount,
-                (int) lowCount
+                (int) lowCount,
+                oldest,
+                newest
         );
     }
 
@@ -168,6 +197,8 @@ public class AlertService {
             int totalAlerts,
             int highCount,
             int mediumCount,
-            int lowCount
+            int lowCount,
+            String oldestAlert,
+            String newestAlert
     ) {}
 }

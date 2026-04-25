@@ -126,9 +126,6 @@ public class KafkaConsumerService {
                 .build();
     }
 
-    // =====================================================
-    // Helper — parsare score_breakdown obiect imbricat
-    // =====================================================
     private ScoreBreakdown parseScoreBreakdown(JsonNode json) {
         JsonNode node = json.get("score_breakdown");
         if (node == null) return null;
@@ -140,9 +137,6 @@ public class KafkaConsumerService {
                 .build();
     }
 
-    // =====================================================
-    // Helper methods cu null-safety
-    // =====================================================
     private String getText(JsonNode node, String field) {
         JsonNode n = node.get(field);
         return (n != null && !n.isNull()) ? n.asText() : null;
