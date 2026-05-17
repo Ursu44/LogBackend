@@ -19,11 +19,9 @@ public class IncidentService {
 
     private final IncidentRepository incidentRepository;
 
-    // ── Sink pentru subscripții GraphQL ──────────────────────────
     private final Sinks.Many<Incident> incidentSink =
             Sinks.many().multicast().onBackpressureBuffer();
 
-    // ── Salvare incident ──────────────────────────────────────────
     public void save(Incident incident) {
         try {
             // Evită duplicate
@@ -42,7 +40,6 @@ public class IncidentService {
         }
     }
 
-    // ── Query-uri ─────────────────────────────────────────────────
     public List<Incident> getRecentIncidents() {
         List<Incident> critical = incidentRepository
                 .findTop20BySeverityOrderByCreatedAtDesc("CRITICAL");
