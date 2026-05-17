@@ -137,19 +137,45 @@ public class AlertService {
 
     public List<Alert> getEntityHistory(String entityId,
                                         int windowMinutes) {
-        LocalDateTime maxTimestamp = alertRepository
-                .findTop1ByOrderByTimestampIsoDesc()
+        log.info("getEntityHistory called: entity={}, window={}",
+                entityId, windowMinutes);
+
+        List<Alert> all = alertRepository
+                .findByEntityIdOrderByTimestampIsoAsc(entityId);
+
+        log.info("Total alerte găsite în DB pentru {}: {}",
+                entityId, all.size());
+
+        if (all.isEmpty()) return List.of();
+
+        LocalDateTime maxTimestamp = all.stream()
                 .map(Alert::getTimestampIso)
+                .filter(t -> t != null)
+                .max(Comparator.naturalOrder())
                 .orElse(LocalDateTime.now(ZoneOffset.UTC));
 
-        LocalDateTime from = maxTimestamp.minusMinutes(windowMinutes);
+        LocalDateTime from = maxTimestamp
+                .minusMinutes(windowMinutes);
 
-        return alertRepository
-                .findByEntityIdOrderByTimestampIsoAsc(entityId)
-                .stream()
+        log.info("maxTimestamp={}, from={}", maxTimestamp, from);
+
+        List<Alert> filtered = all.stream()
                 .filter(a -> a.getTimestampIso() != null &&
                         a.getTimestampIso().isAfter(from))
                 .toList();
+
+        log.info("Alerte după filtrare: {}", filtered.size());
+
+        if (filtered.size() < 10) {
+            int size = all.size();
+            List<Alert> fallback = all.subList(
+                    Math.max(0, size - 100), size);
+            log.info("Fallback la ultimele 100: {}",
+                    fallback.size());
+            return fallback;
+        }
+
+        return filtered;
     }
 
     public DashboardStats getDashboardStats(int windowMinutes) {
