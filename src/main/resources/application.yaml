@@ -3,7 +3,7 @@ spring:
     name: LogsBackend
 
   kafka:
-    bootstrap-servers: kafka:9092
+    bootstrap-servers: localhost:29092
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/logs}
@@ -44,3 +44,13 @@ logging:
     com.example.logsbackend: DEBUG
     org.springframework.graphql: DEBUG
     org.springframework.web.socket: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET:my-super-secret-key-minimum-32-characters}
+  expiration: 1800000
+  temp-expiration: 300000
+  refresh-expiration: 604800000
+
+app:
+  cookie:
+    secure: false
