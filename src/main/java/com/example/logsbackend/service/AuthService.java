@@ -1,5 +1,3 @@
-// src/main/java/com/example/logsbackend/service/AuthService.java
-
 package com.example.logsbackend.service;
 
 import com.example.logsbackend.model.User;
@@ -30,7 +28,6 @@ public class AuthService {
     private final CodeVerifier    codeVerifier;
     private final JwtService      jwtService;
 
-    // ── Înregistrare ─────────────────────────────
     public void register(String username,
                          String password,
                          String email) {
@@ -55,7 +52,6 @@ public class AuthService {
         log.info("User înregistrat: {}", username);
     }
 
-    // ── Login Step 1: credențiale ─────────────────
     public LoginResponse login(String username,
                                String password) {
 
@@ -71,7 +67,6 @@ public class AuthService {
                     "Credențiale incorecte");
         }
 
-        // Prima autentificare — setup TOTP
         if (!user.isTotpEnabled()) {
             String secret =
                     secretGenerator.generate();
@@ -89,7 +84,6 @@ public class AuthService {
                     tempToken, qrUrl);
         }
 
-        // TOTP activ — cere codul
         String tempToken =
                 jwtService.generateTempToken(username);
 
@@ -97,7 +91,6 @@ public class AuthService {
                 false, true, tempToken, null);
     }
 
-    // ── Login Step 2: verificare TOTP ─────────────
     public TotpVerifyResult verifyTotp(
             String tempToken,
             String code) {
@@ -139,7 +132,6 @@ public class AuthService {
                 accessToken, refreshToken);
     }
 
-    // ── Refresh token ─────────────────────────────
     public String refreshAccessToken(
             String refreshToken) {
 
@@ -162,14 +154,12 @@ public class AuthService {
                 username, user.getRole());
     }
 
-    // ── Verificare sesiune ────────────────────────
     public boolean checkToken(String accessToken) {
         return accessToken != null
                 && jwtService
                 .isValidAccessToken(accessToken);
     }
 
-    // ── QR code generator ─────────────────────────
     private String generateQrUrl(String username,
                                  String secret) {
         try {
@@ -195,7 +185,6 @@ public class AuthService {
         }
     }
 
-    // ── Records ───────────────────────────────────
     public record LoginResponse(
             boolean requiresSetup,
             boolean requiresTotp,

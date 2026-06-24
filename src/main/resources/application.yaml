@@ -6,7 +6,7 @@ spring:
     bootstrap-servers: localhost:29092
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/logs}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/logs}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
 

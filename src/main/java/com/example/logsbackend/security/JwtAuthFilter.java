@@ -1,5 +1,3 @@
-// src/main/java/com/example/logsbackend/security/JwtAuthFilter.java
-
 package com.example.logsbackend.security;
 
 import jakarta.servlet.*;
@@ -33,7 +31,6 @@ public class JwtAuthFilter
 
         String token = null;
 
-        // 1. Caută token în cookie HttpOnly
         if (request.getCookies() != null) {
             for (Cookie cookie
                     : request.getCookies()) {
@@ -45,7 +42,6 @@ public class JwtAuthFilter
             }
         }
 
-        // 2. Fallback — Authorization header
         if (token == null) {
             String authHeader = request
                     .getHeader("Authorization");
@@ -56,7 +52,6 @@ public class JwtAuthFilter
             }
         }
 
-        // 3. Validează și setează context
         if (token != null
                 && jwtService
                 .isValidAccessToken(token)) {

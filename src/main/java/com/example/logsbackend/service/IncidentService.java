@@ -24,7 +24,6 @@ public class IncidentService {
 
     public void save(Incident incident) {
         try {
-            // Evită duplicate
             if (incidentRepository.existsById(incident.getIncidentId())) {
                 log.debug("Incident deja existent: {}", incident.getIncidentId());
                 return;
@@ -53,7 +52,6 @@ public class IncidentService {
         all.addAll(high);
         all.addAll(medium);
 
-        // Sortează după createdAt descrescător
         all.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
 
         return all;
@@ -75,7 +73,6 @@ public class IncidentService {
         return incidentRepository.findByAttackType(attackType);
     }
 
-    // ── Subscripție GraphQL ───────────────────────────────────────
     public Flux<Incident> getIncidentStream() {
         return incidentSink.asFlux();
     }

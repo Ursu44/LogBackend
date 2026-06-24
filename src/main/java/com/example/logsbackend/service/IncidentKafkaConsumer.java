@@ -38,7 +38,6 @@ public class IncidentKafkaConsumer {
 
     private Incident mapToIncident(JsonNode json) {
 
-        // ── Identificare ──────────────────────────────────────────
         String incidentId = getText(json, "incident_id");
         String entityId   = getText(json, "entity_id");
         LocalDateTime createdAt = parseTimestamp(getText(json, "created_at"));
@@ -46,39 +45,32 @@ public class IncidentKafkaConsumer {
         String endTime    = getText(json, "end_time");
         Double durationSec = getDouble(json, "duration_sec");
 
-        // ── Clasificare atac ──────────────────────────────────────
         List<String> attackTypes  = parseStringList(json, "attack_types");
         List<String> mitreTactics = parseStringList(json, "mitre_tactics");
         String aptPattern  = getText(json, "apt_pattern");
         String severity    = getText(json, "severity");
         Boolean multiStage = getBoolean(json, "multi_stage");
 
-        // ── Root cause ────────────────────────────────────────────
         String rootCause           = getText(json, "root_cause");
         String rootCauseTs         = getText(json, "root_cause_ts");
         List<String> rootCauseRules = parseStringList(json, "root_cause_rules");
         Double rootCauseConfidence  = getDouble(json, "root_cause_confidence");
 
-        // ── Statistici ────────────────────────────────────────────
         Integer totalEvents  = getInt(json, "total_events");
         Integer highEvents   = getInt(json, "high_events");
         Integer mediumEvents = getInt(json, "medium_events");
         Double peakScore     = getDouble(json, "peak_score");
 
-        // ── Confidence (DFRWS Q3) ─────────────────────────────────
         Double avgConfidence    = getDouble(json, "avg_confidence");
         Double maxConfidence    = getDouble(json, "max_confidence");
         Double globalUncertainty = getDouble(json, "global_uncertainty");
 
-        // ── Timeline JSON ─────────────────────────────────────────
-        // Salvăm timeline-ul ca string JSON în coloana JSONB
         String timelineJson = null;
         JsonNode timelineNode = json.get("timeline");
         if (timelineNode != null && !timelineNode.isNull()) {
             timelineJson = timelineNode.toString();
         }
 
-        // ── Event IDs ─────────────────────────────────────────────
         List<String> eventIds = parseStringList(json, "event_ids");
 
         return Incident.builder()
@@ -109,7 +101,6 @@ public class IncidentKafkaConsumer {
                 .build();
     }
 
-    // ── Helper methods ────────────────────────────────────────────
 
     private LocalDateTime parseTimestamp(String isoStr) {
         if (isoStr == null) return null;

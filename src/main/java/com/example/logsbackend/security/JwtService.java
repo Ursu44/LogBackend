@@ -1,5 +1,3 @@
-// src/main/java/com/example/logsbackend/security/JwtService.java
-
 package com.example.logsbackend.security;
 
 import io.jsonwebtoken.*;

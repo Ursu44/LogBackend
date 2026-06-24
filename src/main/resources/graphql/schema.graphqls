@@ -87,38 +87,31 @@ type Incident {
     endTime:              String
     durationSec:          Float
 
-    # Clasificare atac
     attackTypes:          [String]
     mitreTactics:         [String]
     aptPattern:           String
     severity:             String
     multiStage:           Boolean
 
-    # Root cause (DFRWS Q4)
     rootCause:            String
     rootCauseTs:          String
     rootCauseRules:       [String]
     rootCauseConfidence:  Float
 
-    # Statistici
     totalEvents:          Int
     highEvents:           Int
     mediumEvents:         Int
     peakScore:            Float
 
-    # Confidence (DFRWS Q3)
     avgConfidence:        Float
     maxConfidence:        Float
     globalUncertainty:    Float
 
-    # Timeline JSON
     timelineJson:         String
 
-    # Event IDs implicate
     eventIds:             [String]
 }
 
-# Adaugi în type Query existent:
 extend type Query {
     recentIncidents:                    [Incident!]!
     incident(incidentId: String!):      Incident
@@ -127,7 +120,6 @@ extend type Query {
     incidentsByAttackType(attackType: String!): [Incident!]!
 }
 
-# Adaugi în type Subscription existent:
 extend type Subscription {
     newIncident:         Incident!
     newCriticalIncident: Incident!

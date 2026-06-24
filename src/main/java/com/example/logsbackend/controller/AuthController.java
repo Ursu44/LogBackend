@@ -35,7 +35,6 @@ public class AuthController {
                         "User înregistrat cu succes"));
     }
 
-    // ── Login Step 1 ──────────────────────────────
     @PostMapping("/login")
     public ResponseEntity<AuthService.LoginResponse>
     login(
@@ -51,7 +50,6 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // ── Login Step 2: verificare TOTP ─────────────
     @PostMapping("/verify-totp")
     public ResponseEntity<Map<String, String>>
     verifyTotp(
@@ -75,7 +73,6 @@ public class AuthController {
                         "Autentificat cu succes"));
     }
 
-    // ── Refresh token ─────────────────────────────
     @PostMapping("/refresh")
     public ResponseEntity<Map<String, String>>
     refresh(
@@ -99,7 +96,6 @@ public class AuthController {
                 Map.of("message", "Token reînnoit"));
     }
 
-    // ── Verificare sesiune ────────────────────────
     @GetMapping("/check")
     public ResponseEntity<Map<String, Boolean>>
     check(HttpServletRequest request) {
@@ -117,7 +113,6 @@ public class AuthController {
                 Map.of("valid", valid));
     }
 
-    // ── Logout ────────────────────────────────────
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>>
     logout(HttpServletResponse response) {
